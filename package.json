@@ -6,7 +6,7 @@
   "author": "zhaoyimin <18510512011@163.com>",
   "license": "MIT",
   "scripts": {
-    "test": "jest",
+    "test": "jest --collect-coverage",
     "lint": "eslint . --fix"
   },
   "devDependencies": {

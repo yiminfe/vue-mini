@@ -2,7 +2,7 @@ import { reactive } from '../reactive'
 import { effect } from '../effect'
 
 describe('Test Reactivity Effect', () => {
-  it.skip('happy path', () => {
+  it('happy path', () => {
     const user = reactive({
       age: 10
     })
