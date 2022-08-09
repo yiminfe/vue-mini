@@ -8,7 +8,7 @@ interface User {
 }
 
 const user: User = {
-  name: '12',
+  name: '124',
   age: 12
 }
 console.log(user)
