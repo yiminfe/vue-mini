@@ -11,4 +11,3 @@ const user: User = {
   name: '124',
   age: 12
 }
-console.log(user)
