@@ -13,6 +13,7 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   rules: {
     // quotes: "error"
-    quotes: [2, 'single']
+    quotes: [2, 'single'],
+    '@typescript-eslint/no-explicit-any': 0
   }
 }
