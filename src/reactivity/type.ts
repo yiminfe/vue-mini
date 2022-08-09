@@ -1,5 +1,5 @@
-export interface EffectType {
-  run: () => void
+export interface EffectType<T = any> {
+  run(): T
 }
 
 export type SetEffect = Set<EffectType>

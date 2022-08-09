@@ -3,23 +3,24 @@ import { EffectType, SetEffect, MapSetEffect, WeakMapTarget } from './type'
 let activeEffect: EffectType
 
 // 声明 effect
-class ReactiveEffect implements EffectType {
-  private _fn: () => void
-
-  constructor(fn: () => void) {
+class ReactiveEffect<T = any> implements EffectType {
+  private _fn: () => T
+  constructor(fn: () => T) {
     this._fn = fn
   }
 
   run() {
     activeEffect = this as EffectType
-    this._fn()
+    return this._fn()
   }
 }
 
 // 初始化 effect
-export function effect(fn: () => void) {
+export function effect<T = any>(fn: () => T): () => T {
   const _effect: EffectType = new ReactiveEffect(fn)
   _effect.run()
+  const runner: () => T = _effect.run.bind(_effect)
+  return runner
 }
 
 const targetMap: WeakMapTarget = new WeakMap()
