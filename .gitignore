@@ -1,0 +1,14 @@
+# npm
+node_modules
+dist
+
+# Lock
+yarn.lock
+package-lock.json
+
+
+# Editor
+.vscode/*
+
+# Test
+coverage
