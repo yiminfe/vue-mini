@@ -1,5 +1,5 @@
 import { reactive } from '../reactive'
-import { effect } from '../effect'
+import { effect, stop } from '../effect'
 
 describe('Test Reactivity Effect', () => {
   it('happy path', () => {
@@ -63,5 +63,43 @@ describe('Test Reactivity Effect', () => {
     run && run()
     // // should have run
     expect(dummy).toBe(2)
+  })
+
+  it('stop', () => {
+    let dummy
+    const obj = reactive({ prop: 1 })
+    const runner = effect(() => {
+      dummy = obj.prop
+    })
+    obj.prop = 2
+    expect(dummy).toBe(2)
+    stop(runner)
+    stop(runner)
+    obj.prop = 3
+    expect(dummy).toBe(2)
+
+    // stopped effect should still be manually callable
+    runner()
+    expect(dummy).toBe(3)
+  })
+
+  it('onStop', () => {
+    const obj = reactive({
+      foo: 1
+    })
+    const onStop = jest.fn()
+    let dummy
+    const runner = effect(
+      () => {
+        dummy = obj.foo
+      },
+      {
+        onStop
+      }
+    )
+
+    stop(runner)
+    expect(onStop).toBeCalledTimes(1)
+    expect(dummy).toBe(1)
   })
 })

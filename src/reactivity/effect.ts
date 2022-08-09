@@ -1,25 +1,55 @@
+import { extend } from '../shared'
 import {
   EffectType,
   SetEffect,
   MapSetEffect,
   WeakMapTarget,
-  EffectOptions
+  EffectOptions,
+  EffectRunner
 } from './type'
 
 let activeEffect: EffectType
 
 // 声明 effect
 class ReactiveEffect<T = any> implements EffectType {
+  // 私有属性
   private _fn: () => T
+  private active = false
+  onStop?: () => T
+
+  // 公开属性
   public scheduler?: () => T
+  public deps: SetEffect[] = []
+
   constructor(fn: () => T, scheduler?: () => T) {
     this._fn = fn
     this.scheduler = scheduler
   }
 
+  // 执行 effect
   run() {
+    // stop 之后 重新激活
+    this.active = true
     activeEffect = this as EffectType
     return this._fn()
+  }
+
+  // 暂停 effect
+  stop() {
+    if (!this.active) return
+
+    cleanupEffect(this)
+    if (this.onStop) {
+      this.onStop()
+    }
+    this.active = false
+  }
+}
+
+// 清除 effect
+function cleanupEffect(effect: EffectType) {
+  for (const dep of effect.deps) {
+    dep.delete(effect)
   }
 }
 
@@ -37,8 +67,14 @@ export function track(target: object, key: PropertyKey) {
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
+
+  if (!activeEffect) return
+
   // add activeEffect
   dep.add(activeEffect)
+
+  // add dep
+  activeEffect.deps.push(dep)
 }
 
 // 触发 effect
@@ -54,9 +90,18 @@ export function trigger(target: object, key: PropertyKey) {
 export function effect<T = any>(
   fn: () => T,
   options: EffectOptions = {}
-): () => T {
+): EffectRunner {
   const _effect: EffectType = new ReactiveEffect(fn, options.scheduler)
+  // 跪在options上的属性给effect
+  extend(_effect, options)
+
   _effect.run()
-  const runner: () => T = _effect.run.bind(_effect)
+  const runner = _effect.run.bind(_effect) as EffectRunner
+  runner.effect = _effect
   return runner
+}
+
+// 暂停 effect
+export function stop(runner: EffectRunner) {
+  runner.effect.stop()
 }
