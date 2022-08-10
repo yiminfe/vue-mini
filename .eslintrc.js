@@ -15,5 +15,7 @@ module.exports = {
     // quotes: "error"
     quotes: [2, 'single'],
     '@typescript-eslint/no-explicit-any': 0
-  }
+  },
+  // 忽略校验文件
+  ignorePatterns: ['lib', 'coverage', '.husky', 'node_modules']
 }
