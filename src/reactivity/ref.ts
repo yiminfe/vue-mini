@@ -11,6 +11,8 @@ class RefImpl<T> {
 
   // 公开属性
   public dep: SetEffect
+  public __v_isRef = true
+
   constructor(value: T) {
     this._rawValue = value
     this._value = convert(value) as T
@@ -18,7 +20,7 @@ class RefImpl<T> {
   }
 
   get value(): T {
-    trackRefValue(this)
+    trackRefValue<T>(this)
     return this._value
   }
 
@@ -33,17 +35,28 @@ class RefImpl<T> {
 
 // 转换成 reactive || value
 function convert<T extends object, K = any>(value: T | K) {
+  // TODO 遇到的问题 多类型转换问题
   return isObject(value) ? reactive(value as T) : (value as K)
 }
 
 // 追踪 ref value
-function trackRefValue<T extends object, K = any>(ref: RefImpl<T | K>) {
+function trackRefValue<T = any>(ref: RefImpl<T>) {
   if (isTracking()) {
     trackEffects(ref.dep)
   }
 }
 
 // ref 响应式
-export function ref<T extends object, K = any>(value: T | K) {
-  return new RefImpl<T | K>(value)
+export function ref<T = any>(value: T) {
+  return new RefImpl<T>(value)
+}
+
+// 是否是 ref 响应式
+export function isRef(ref: any) {
+  return !!ref.__v_isRef
+}
+
+// 获取 ref 的value
+export function unRef<T = any>(ref: RefImpl<T> | T): T {
+  return isRef(ref) ? (ref as RefImpl<T>).value : (ref as T)
 }
