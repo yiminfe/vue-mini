@@ -18,4 +18,12 @@ describe('shallowReadonly', () => {
     user.age = 11
     expect(console.warn).toHaveBeenCalled()
   })
+
+  it('should call console.warn when set', () => {
+    console.warn = jest.fn()
+    let age
+    const res = shallowReadonly(age)
+    expect(res).toBeUndefined()
+    expect(console.warn).toHaveBeenCalled()
+  })
 })
