@@ -1,5 +1,5 @@
 import { reactive } from '../reactive'
-import { effect, stop } from '../effect'
+import { effect, stop, start } from '../effect'
 
 describe('Test Reactivity Effect', () => {
   it('happy path', () => {
@@ -39,7 +39,7 @@ describe('Test Reactivity Effect', () => {
 
   it('scheduler', () => {
     let dummy
-    // TODO 遇到的问题1：ts中声明的变量，没有赋值，vscode会报错
+    // TODO 遇到的问题1：ts中声明了类型的变量，没有赋值，vscode会报错
     let run: (() => void) | undefined
     const scheduler = jest.fn(() => {
       run = runner
@@ -65,7 +65,7 @@ describe('Test Reactivity Effect', () => {
     expect(dummy).toBe(2)
   })
 
-  it('stop', () => {
+  it('stop and start', () => {
     let dummy
     const obj = reactive({ prop: 1 })
     const runner = effect(() => {
@@ -76,11 +76,18 @@ describe('Test Reactivity Effect', () => {
     stop(runner)
     stop(runner)
     obj.prop = 3
-    expect(dummy).toBe(2)
+    // TODO 遇到的问题 ++ stop失效
+    obj.prop++
+    runner()
+    expect(dummy).toBe(4)
 
     // stopped effect should still be manually callable
+    start(runner)
+    start(runner)
     runner()
-    expect(dummy).toBe(3)
+    obj.prop++
+    expect(obj.prop).toBe(5)
+    expect(dummy).toBe(5)
   })
 
   it('onStop', () => {

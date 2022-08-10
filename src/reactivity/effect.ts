@@ -9,12 +9,13 @@ import {
 } from './type'
 
 let activeEffect: EffectType
+let shouldTrack = false
 
 // 声明 effect
 class ReactiveEffect<T = any> implements EffectType {
   // 私有属性
   private _fn: () => T
-  private active = false
+  private active = true
   onStop?: () => T
 
   // 公开属性
@@ -28,21 +29,37 @@ class ReactiveEffect<T = any> implements EffectType {
 
   // 执行 effect
   run() {
-    // stop 之后 重新激活
-    this.active = true
+    // 未激活状态 不追踪 activeEffect
+    if (!this.active) {
+      return this._fn()
+    }
+
+    // 追踪 activeEffect
+    shouldTrack = true
     activeEffect = this as EffectType
-    return this._fn()
+    const res = this._fn()
+
+    // 重置
+    shouldTrack = false
+    return res
   }
 
   // 暂停 effect
   stop() {
-    if (!this.active) return
-
-    cleanupEffect(this)
-    if (this.onStop) {
-      this.onStop()
+    if (this.active) {
+      cleanupEffect(this)
+      if (this.onStop) {
+        this.onStop()
+      }
+      this.active = false
     }
-    this.active = false
+  }
+
+  // 启动 effect
+  start() {
+    if (!this.active) {
+      this.active = true
+    }
   }
 }
 
@@ -51,24 +68,31 @@ function cleanupEffect(effect: EffectType) {
   for (const dep of effect.deps) {
     dep.delete(effect)
   }
+
+  // 清空 deps
+  effect.deps.length = 0
 }
 
 const targetMap: WeakMapTarget = new WeakMap()
 
 // 追踪 effect
-export function track(target: object, key: PropertyKey) {
+export function track<T extends object>(target: T, key: PropertyKey) {
+  if (!isTracking()) return
+
   // target -> key -> dep
   let depsMap: MapSetEffect = targetMap.get(target) as MapSetEffect
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()))
   }
+
   // 获取 set<fn>
   let dep: SetEffect = depsMap.get(key) as SetEffect
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
 
-  if (!activeEffect) return
+  // 判断是否已经追踪过 activeEffect
+  if (dep.has(activeEffect)) return
 
   // add activeEffect
   dep.add(activeEffect)
@@ -77,8 +101,13 @@ export function track(target: object, key: PropertyKey) {
   activeEffect.deps.push(dep)
 }
 
+// 是否可以追踪 activeEffect
+function isTracking() {
+  return shouldTrack && activeEffect
+}
+
 // 触发 effect
-export function trigger(target: object, key: PropertyKey) {
+export function trigger<T extends object>(target: T, key: PropertyKey) {
   const depsMap: MapSetEffect = targetMap.get(target) as MapSetEffect
   const dep: SetEffect = depsMap.get(key) as SetEffect
   for (const effect of dep) {
@@ -104,4 +133,9 @@ export function effect<T = any>(
 // 暂停 effect
 export function stop(runner: EffectRunner) {
   runner.effect.stop()
+}
+
+// 启动 effect
+export function start(runner: EffectRunner) {
+  runner.effect.start()
 }

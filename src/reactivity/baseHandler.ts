@@ -13,7 +13,7 @@ function createGetter<T extends object>(isReadonly = false) {
     const res = Reflect.get(target, key)
 
     if (!isReadonly) {
-      track(target, key)
+      track<T>(target, key)
     }
     return res
   }
@@ -24,7 +24,7 @@ function createSetter<T extends object>() {
   return function set(target: T, key: PropertyKey, value: any) {
     const res = Reflect.set(target, key, value)
 
-    trigger(target, key)
+    trigger<T>(target, key)
     return res
   }
 }
