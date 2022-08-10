@@ -60,3 +60,19 @@ export function isRef(ref: any) {
 export function unRef<T = any>(ref: RefImpl<T> | T): T {
   return isRef(ref) ? (ref as RefImpl<T>).value : (ref as T)
 }
+
+// 代理 ref 省略.value 进行读写
+export function proxyRefs<T extends object>(objectWithRefs: T) {
+  return new Proxy(objectWithRefs, {
+    get(target, key) {
+      return unRef(Reflect.get(target, key))
+    },
+    set(target, key, value) {
+      if (isRef(target[key]) && !isRef(value)) {
+        return (target[key].value = value)
+      } else {
+        return Reflect.set(target, key, value)
+      }
+    }
+  })
+}
