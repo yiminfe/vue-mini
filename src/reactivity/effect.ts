@@ -12,17 +12,17 @@ let activeEffect: EffectType
 let shouldTrack = false
 
 // 声明 effect
-class ReactiveEffect<T = any> implements EffectType {
+export class ReactiveEffect<T = any> implements EffectType {
   // 私有属性
   private _fn: () => T
   private active = true
-  onStop?: () => T
 
   // 公开属性
-  public scheduler?: () => T
+  public scheduler?: () => void
+  public onStop?: () => void
   public deps: SetEffect[] = []
 
-  constructor(fn: () => T, scheduler?: () => T) {
+  constructor(fn: () => T, scheduler?: () => void) {
     this._fn = fn
     this.scheduler = scheduler
   }
@@ -129,13 +129,13 @@ export function triggerEffects(dep: SetEffect) {
 export function effect<T = any>(
   fn: () => T,
   options: EffectOptions = {}
-): EffectRunner {
-  const _effect: EffectType = new ReactiveEffect(fn, options.scheduler)
+): EffectRunner<T> {
+  const _effect: EffectType = new ReactiveEffect<T>(fn, options.scheduler)
   // 跪在options上的属性给effect
   extend(_effect, options)
 
   _effect.run()
-  const runner = _effect.run.bind(_effect) as EffectRunner
+  const runner = _effect.run.bind(_effect) as EffectRunner<T>
   runner.effect = _effect
   return runner
 }
