@@ -1,13 +1,15 @@
 /**
- * @file 创建组件 模块
+ * @file 创建组件数据 模块
  * @author zhaoyimin
  */
+import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 
 // 创建组件实例
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
-    type: vnode.type
+    type: vnode.type,
+    setupState: {}
   }
 
   return component
@@ -30,6 +32,9 @@ export function setupComponent(instance) {
 function setupStatefulComponent(instance: any) {
   // 获取
   const Component = instance.type
+
+  // 给组件实例创建代理对象
+  instance.proxy = new Proxy({ _: instance }, PublicInstanceProxyHandlers)
 
   // 获取组件的setup函数
   const { setup } = Component

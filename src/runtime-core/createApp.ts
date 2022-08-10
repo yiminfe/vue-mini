@@ -14,7 +14,7 @@ export function createApp(rootComponent) {
       // 根据根组件，创建虚拟节点
       const vnode = createVNode(rootComponent)
 
-      // 根据虚拟节点 and 根节点 旋绕 dom
+      // 根据虚拟节点 and 根节点 渲染 dom
       render(vnode, rootContainer)
     }
   }

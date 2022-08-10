@@ -28,7 +28,7 @@ function processElement(vnode: any, container: any) {
 
 // 挂载 element
 function mountElement(vnode: any, container: any) {
-  const el = document.createElement(vnode.type)
+  const el = (vnode.el = document.createElement(vnode.type))
 
   const { children } = vnode
 
@@ -62,22 +62,28 @@ function processComponent(vnode: any, container: any) {
 }
 
 // 挂载组件
-function mountComponent(vnode: any, container) {
+function mountComponent(initialVNode: any, container) {
   // 创建组件实例
-  const instance = createComponentInstance(vnode)
+  const instance = createComponentInstance(initialVNode)
 
-  // 组织组件
+  // 组织组件数据
   setupComponent(instance)
 
   // 组织 渲染dom and 副作用函数effect
-  setupRenderEffect(instance, container)
+  setupRenderEffect(instance, initialVNode, container)
 }
 
 // 组织 渲染dom and 副作用函数effect
-function setupRenderEffect(instance: any, container) {
-  // 获取旋绕函数
-  const subTree = instance.render()
+function setupRenderEffect(instance: any, initialVNode, container) {
+  // 获取组件实例的代理对象
+  const { proxy } = instance
+
+  // 调用渲染函数
+  const subTree = instance.render.call(proxy)
 
   // 递归 比较 虚拟节点
   patch(subTree, container)
+
+  // 给虚拟节点的el赋值
+  initialVNode.el = subTree.el
 }
