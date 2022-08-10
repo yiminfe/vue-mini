@@ -91,6 +91,11 @@ export function track<T extends object>(target: T, key: PropertyKey) {
     depsMap.set(key, (dep = new Set()))
   }
 
+  trackEffects(dep)
+}
+
+// 追踪 effect set容器 公共逻辑
+export function trackEffects(dep: SetEffect) {
   // 判断是否已经追踪过 activeEffect
   if (dep.has(activeEffect)) return
 
@@ -102,14 +107,19 @@ export function track<T extends object>(target: T, key: PropertyKey) {
 }
 
 // 是否可以追踪 activeEffect
-function isTracking() {
-  return shouldTrack && activeEffect
+export function isTracking(): boolean {
+  return shouldTrack && !!activeEffect
 }
 
 // 触发 effect
 export function trigger<T extends object>(target: T, key: PropertyKey) {
   const depsMap: MapSetEffect = targetMap.get(target) as MapSetEffect
   const dep: SetEffect = depsMap.get(key) as SetEffect
+  triggerEffects(dep)
+}
+
+// 触发 effect set容器 公共逻辑
+export function triggerEffects(dep: SetEffect) {
   for (const effect of dep) {
     effect.scheduler ? effect.scheduler() : effect.run()
   }
