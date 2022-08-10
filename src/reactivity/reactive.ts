@@ -1,4 +1,8 @@
-import { mutableHandlers, readonlyHandlers } from './baseHandler'
+import {
+  mutableHandlers,
+  readonlyHandlers,
+  shallowReadonlyHandlers
+} from './baseHandler'
 
 // 判断 只读 和 reactive对象
 export const enum ReactiveFlags {
@@ -14,6 +18,11 @@ export function reactive<T extends object>(raw: T): T {
 // 创建 只读 reactive 对象
 export function readonly<T extends object>(raw: T): T {
   return createReactiveObject<T>(raw, readonlyHandlers<T>())
+}
+
+// 创建 浅层 reactive 对象
+export function shallowReadonly<T extends object>(raw: T): T {
+  return createReactiveObject<T>(raw, shallowReadonlyHandlers<T>())
 }
 
 // 是否是 reactive 对象
