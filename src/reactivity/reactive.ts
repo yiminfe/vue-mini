@@ -35,6 +35,11 @@ export function isReadonly<T extends object>(value: T): boolean {
   return !!value[ReactiveFlags.IS_READONLY]
 }
 
+// 是否是 proxy
+export function isProxy<T extends object>(value: T): boolean {
+  return isReactive(value)
+}
+
 // 创建 reactive 代理对象
 function createReactiveObject<T extends object>(
   target: T,
