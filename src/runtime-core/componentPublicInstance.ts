@@ -2,6 +2,7 @@
  * @file 组件公开实例属性 模块
  * @author zhaoyimin
  */
+import { hasOwn } from '../shared/index'
 
 // 适配器模式
 const publicPropertiesMap = {
@@ -12,9 +13,12 @@ const publicPropertiesMap = {
 export const PublicInstanceProxyHandlers = {
   get({ _: instance }, key) {
     // setupState 响应式数据
-    const { setupState } = instance
-    if (key in setupState) {
+    const { setupState, props } = instance
+
+    if (hasOwn(setupState, key)) {
       return setupState[key]
+    } else if (hasOwn(props, key)) {
+      return props[key]
     }
 
     // 公开实例属性

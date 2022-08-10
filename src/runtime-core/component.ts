@@ -2,14 +2,17 @@
  * @file 创建组件数据 模块
  * @author zhaoyimin
  */
+import { shallowReadonly } from '../reactivity/reactive'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
+import { initProps } from './componentProps'
 
 // 创建组件实例
 export function createComponentInstance(vnode) {
   const component = {
     vnode,
     type: vnode.type,
-    setupState: {}
+    setupState: {},
+    props: {}
   }
 
   return component
@@ -19,7 +22,7 @@ export function createComponentInstance(vnode) {
 export function setupComponent(instance) {
   // TODO
   // 初始化 props
-  // initProps()
+  initProps(instance, instance.vnode.props)
 
   // 初始化 slot
   // initSlots()
@@ -40,7 +43,7 @@ function setupStatefulComponent(instance: any) {
   const { setup } = Component
 
   if (setup) {
-    const setupResult = setup()
+    const setupResult = setup(shallowReadonly(instance.props))
 
     // 处理setup函数的返回值
     handleSetupResult(instance, setupResult)
