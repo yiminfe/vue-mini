@@ -5,6 +5,7 @@
 import { shallowReadonly } from '../reactivity/reactive'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import { initProps } from './componentProps'
+import { initSlots } from './componentSlots'
 import { emit } from './componentEmit'
 
 // 创建组件实例
@@ -12,9 +13,12 @@ export function createComponentInstance(vnode) {
   const component = {
     vnode,
     type: vnode.type,
-    setupState: {},
     props: {},
-    emit: () => undefined
+    slots: {},
+    proxy: {},
+    setupState: {},
+    emit: () => undefined,
+    render: () => undefined
   }
 
   component.emit = emit.bind(null, component) as any
@@ -29,7 +33,7 @@ export function setupComponent(instance) {
   initProps(instance, instance.vnode.props)
 
   // 初始化 slot
-  // initSlots()
+  initSlots(instance, instance.vnode.children)
 
   // 组织有状态的组件
   setupStatefulComponent(instance)

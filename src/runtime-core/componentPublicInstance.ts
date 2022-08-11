@@ -6,7 +6,8 @@ import { hasOwn } from '../shared/index'
 
 // 适配器模式
 const publicPropertiesMap = {
-  $el: (i) => i.vnode.el
+  $el: (i) => i.vnode.el,
+  $slots: (i) => i.slots
 }
 
 // 处理公开实例属性

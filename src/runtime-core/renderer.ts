@@ -33,14 +33,14 @@ function mountElement(vnode: any, container: any) {
 
   const { children, shapeFlag } = vnode
 
-  // children
+  // 处理子节点
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
     mountChildren(vnode, el)
   }
 
-  // props
+  // 处理属性
   const { props } = vnode
   for (const key in props) {
     const val = props[key]
@@ -53,6 +53,7 @@ function mountElement(vnode: any, container: any) {
     }
   }
 
+  // 挂载到容器
   container.append(el)
 }
 
@@ -73,7 +74,7 @@ function mountComponent(initialVNode: any, container) {
   // 创建组件实例
   const instance = createComponentInstance(initialVNode)
 
-  // 组织组件数据
+  // 组织组件数据 props emits slots proxy 等
   setupComponent(instance)
 
   // 组织 渲染dom and 副作用函数effect
