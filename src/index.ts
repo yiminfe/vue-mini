@@ -3,3 +3,4 @@
  * @author zhaoyimin
  */
 export * from './runtime-dom'
+export * from './reactivity'

@@ -2,7 +2,8 @@
  * @file 创建组件数据 模块
  * @author zhaoyimin
  */
-import { shallowReadonly } from '../reactivity/reactive'
+import { shallowReadonly } from '../reactivity'
+import { proxyRefs } from '../reactivity'
 import { PublicInstanceProxyHandlers } from './componentPublicInstance'
 import { initProps } from './componentProps'
 import { initSlots } from './componentSlots'
@@ -19,6 +20,8 @@ export function createComponentInstance(vnode, parent) {
     setupState: {},
     parent,
     provides: parent ? parent.provides : {},
+    isMounted: false,
+    subTree: {},
     emit: () => undefined,
     render: () => undefined
   }
@@ -69,7 +72,7 @@ function handleSetupResult(instance, setupResult: any) {
   // function Object
   // TODO function
   if (typeof setupResult === 'object') {
-    instance.setupState = setupResult
+    instance.setupState = proxyRefs(setupResult)
   }
 
   // 处理完组件的setup函数
