@@ -4,6 +4,10 @@ function createElement(type) {
   return document.createElement(type)
 }
 
+function createText(type) {
+  return document.createTextNode(type)
+}
+
 function patchProp(el, key, prevVal, nextVal) {
   const isOn = (key: string) => /^on[A-Z]/.test(key)
   if (isOn(key)) {
@@ -24,8 +28,8 @@ function patchProp(el, key, prevVal, nextVal) {
   }
 }
 
-function insert(el, parent) {
-  parent.append(el)
+function insert(child, parent, anchor) {
+  parent.insertBefore(child, anchor || null)
 }
 
 function remove(child, parent) {
@@ -41,6 +45,7 @@ function setElementText(el, text) {
 
 const renderer: any = createRenderer({
   createElement,
+  createText,
   patchProp,
   insert,
   remove,
