@@ -8,16 +8,16 @@ import { Fragment, Text } from './vnode'
 
 // 渲染
 export function render(vnode, container) {
-  patch(vnode, container)
+  patch(vnode, container, null)
 }
 
 // 比较虚拟节点
-function patch(vnode, container) {
+function patch(vnode, container, parentComponent) {
   // TODO
   const { type, shapeFlag } = vnode
   switch (type) {
     case Fragment:
-      processFragment(vnode, container)
+      processFragment(vnode, container, parentComponent)
       break
     case Text:
       processText(vnode, container)
@@ -25,17 +25,17 @@ function patch(vnode, container) {
 
     default:
       if (shapeFlag & ShapeFlags.ELEMENT) {
-        processElement(vnode, container)
+        processElement(vnode, container, parentComponent)
       } else if (shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-        processComponent(vnode, container)
+        processComponent(vnode, container, parentComponent)
       }
       break
   }
 }
 
 // 处理 Fragment slot 节点
-function processFragment(vnode: any, container: any) {
-  mountChildren(vnode, container)
+function processFragment(vnode: any, container: any, parentComponent) {
+  mountChildren(vnode, container, parentComponent)
 }
 
 // 处理 text 节点
@@ -46,12 +46,12 @@ function processText(vnode: any, container: any) {
 }
 
 // 处理 element 节点
-function processElement(vnode: any, container: any) {
-  mountElement(vnode, container)
+function processElement(vnode: any, container: any, parentComponent) {
+  mountElement(vnode, container, parentComponent)
 }
 
 // 挂载 element
-function mountElement(vnode: any, container: any) {
+function mountElement(vnode: any, container: any, parentComponent) {
   const el = (vnode.el = document.createElement(vnode.type))
 
   const { children, shapeFlag } = vnode
@@ -60,7 +60,7 @@ function mountElement(vnode: any, container: any) {
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    mountChildren(vnode, el)
+    mountChildren(vnode, el, parentComponent)
   }
 
   // 处理属性
@@ -81,21 +81,21 @@ function mountElement(vnode: any, container: any) {
 }
 
 // 挂载 element 子节点
-function mountChildren(vnode: any, container: any) {
+function mountChildren(vnode: any, container: any, parentComponent) {
   for (const v of vnode.children) {
-    patch(v, container)
+    patch(v, container, parentComponent)
   }
 }
 
 // 处理组件入口
-function processComponent(vnode: any, container: any) {
-  mountComponent(vnode, container)
+function processComponent(vnode: any, container: any, parentComponent) {
+  mountComponent(vnode, container, parentComponent)
 }
 
 // 挂载组件
-function mountComponent(initialVNode: any, container) {
+function mountComponent(initialVNode: any, container, parentComponent) {
   // 创建组件实例
-  const instance = createComponentInstance(initialVNode)
+  const instance = createComponentInstance(initialVNode, parentComponent)
 
   // 组织组件数据 props emits slots proxy 等
   setupComponent(instance)
@@ -113,7 +113,7 @@ function setupRenderEffect(instance: any, initialVNode, container) {
   const subTree = instance.render.call(proxy)
 
   // 递归 比较 虚拟节点
-  patch(subTree, container)
+  patch(subTree, container, instance)
 
   // 给虚拟节点的el赋值
   initialVNode.el = subTree.el
