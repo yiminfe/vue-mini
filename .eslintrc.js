@@ -18,5 +18,5 @@ module.exports = {
     '@typescript-eslint/no-empty-function': 0
   },
   // 忽略校验文件
-  ignorePatterns: ['lib', 'coverage', '.husky', 'node_modules']
+  ignorePatterns: ['lib', 'coverage', '.husky', 'node_modules', 'example']
 }
