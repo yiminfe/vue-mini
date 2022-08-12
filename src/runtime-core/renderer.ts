@@ -197,8 +197,19 @@ export function createRenderer(options) {
       // 记录比较次数
       let patched = 0
 
-      // 根据属性 key 建立 Map映射表  记录key对应的新节点下标
+      // 根据属性 key 建立 Map映射表  记录key在新节点对应的下标
       const keyToNewIndexMap = new Map()
+
+      // 根据新节点剩下的总数，创建新节点映射旧节点的下标容器（newVnode.index->oldVnode.index），value=旧节点的下标
+      const newIndexToOldIndexMap = new Array(toBePatched)
+      // 是否需要移动元素
+      let moved = false
+      // 查找到的新节点index是否是持续的
+      let maxNewIndexSoFar = 0
+      // 给新节点映射旧节点的下标容器赋初始值 0代表在旧节点中不存在
+      for (let i = 0; i < toBePatched; i++) newIndexToOldIndexMap[i] = 0
+
+      // 给新节点 key映射表 赋值 value = 新节点的下标
       for (let i = s2; i <= e2; i++) {
         const nextChild = c2[i]
         keyToNewIndexMap.set(nextChild.key, i)
@@ -208,7 +219,7 @@ export function createRenderer(options) {
       for (let i = s1; i <= e1; i++) {
         const prevChild = c1[i]
 
-        // 新节点已经比较完了，剩余的旧节点直接伤处
+        // 新节点已经比较完了，剩余的旧节点直接删除
         if (patched >= toBePatched) {
           hostRemove(prevChild.el, container)
           continue
@@ -217,11 +228,12 @@ export function createRenderer(options) {
         // 记录 新节点key对应的下标
         let newIndex
         if (prevChild.key != null) {
-          // 时间复杂度O(n)
+          // 时间复杂度O(n) 在新节点key->index映射表中查找新节点的index
           newIndex = keyToNewIndexMap.get(prevChild.key)
         } else {
-          // 当旧节点的key不存在， 时间复杂度O(n²)
-          for (let j = s2; j < e2; j++) {
+          // 当旧节点的key不存在， 时间复杂度O(n²)，比较vnode.type
+          // TODO 遇到的问题 j <= e2 索引值应该相等
+          for (let j = s2; j <= e2; j++) {
             if (isSomeVNodeType(prevChild, c2[j])) {
               newIndex = j
               break
@@ -233,12 +245,97 @@ export function createRenderer(options) {
         if (newIndex === undefined) {
           hostRemove(prevChild.el, container)
         } else {
-          // 找到了，继续 diff
+          // 找到了
+          if (newIndex >= maxNewIndexSoFar) {
+            // newIndex 是持续的，不需要移动元素
+            maxNewIndexSoFar = newIndex
+          } else {
+            // newIndex 不是持续的，需要移动元素
+            moved = true
+          }
+
+          // 给newVnode.index->oldVnode.index映射容器赋值，i+1 避免0代表在旧节点中不存在的场景
+          newIndexToOldIndexMap[newIndex - s2] = i + 1
+
+          // 继续 diff
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           patched++
         }
       }
+
+      // 根据最长递增子序列处理移动
+      // 性能优化，需要移动，才获取最长递增子序列
+      const increasingNewIndexSequence = moved
+        ? getSequence(newIndexToOldIndexMap)
+        : []
+      // 获取 最长递增子序列 的最大下标
+      let j = increasingNewIndexSequence.length - 1
+
+      // 新节点数组反转 进行移动，保证nextIndex + 1的元素已经存在dom树上
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        // 获取需要移动的元素下标
+        const nextIndex = i + s2
+        // 获取需要移动的元素
+        const nextChild = c2[nextIndex]
+        // 获取锚点元素
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
+
+        // newVnode.index->oldVnode.index映射表的值=0 说明新节点在旧节点中不存，需要新增元素
+        if (newIndexToOldIndexMap[i] === 0) {
+          patch(null, nextChild, container, parentComponent, anchor)
+        } else if (moved) {
+          // 需要移动的元素
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            hostInsert(nextChild.el, container, anchor)
+          } else {
+            j--
+          }
+        }
+      }
     }
+  }
+
+  // 获取最长递增子序列
+  function getSequence(arr) {
+    const p = arr.slice()
+    const result = [0]
+    let i, j, u, v, c
+    const len = arr.length
+    for (i = 0; i < len; i++) {
+      const arrI = arr[i]
+      if (arrI !== 0) {
+        j = result[result.length - 1]
+        if (arr[j] < arrI) {
+          p[i] = j
+          result.push(i)
+          continue
+        }
+        u = 0
+        v = result.length - 1
+        while (u < v) {
+          // 右移，最高位补0
+          c = (u + v) >> 1
+          if (arr[result[c]] < arrI) {
+            u = c + 1
+          } else {
+            v = c
+          }
+        }
+        if (arrI < arr[result[u]]) {
+          if (u > 0) {
+            p[i] = result[u - 1]
+          }
+          result[u] = i
+        }
+      }
+    }
+    u = result.length
+    v = result[u - 1]
+    while (u-- > 0) {
+      result[u] = v
+      v = p[v]
+    }
+    return result
   }
 
   // 卸载 children
