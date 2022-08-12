@@ -6,8 +6,52 @@ import { createAppAPI } from './createApp'
 import { ShapeFlags } from '../shared/ShapeFlags'
 import { EMPTY_OBJ } from '../shared'
 import { createComponentInstance, setupComponent } from './component'
+import { shouldUpdateComponent } from './componentUpdateUtils'
 import { Fragment, Text } from './vnode'
 import { effect } from '../reactivity/effect'
+
+// 获取最长递增子序列
+function getSequence(arr) {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        // 右移，最高位补0
+        c = (u + v) >> 1
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
+}
 
 // 创建渲染器
 export function createRenderer(options) {
@@ -295,49 +339,6 @@ export function createRenderer(options) {
     }
   }
 
-  // 获取最长递增子序列
-  function getSequence(arr) {
-    const p = arr.slice()
-    const result = [0]
-    let i, j, u, v, c
-    const len = arr.length
-    for (i = 0; i < len; i++) {
-      const arrI = arr[i]
-      if (arrI !== 0) {
-        j = result[result.length - 1]
-        if (arr[j] < arrI) {
-          p[i] = j
-          result.push(i)
-          continue
-        }
-        u = 0
-        v = result.length - 1
-        while (u < v) {
-          // 右移，最高位补0
-          c = (u + v) >> 1
-          if (arr[result[c]] < arrI) {
-            u = c + 1
-          } else {
-            v = c
-          }
-        }
-        if (arrI < arr[result[u]]) {
-          if (u > 0) {
-            p[i] = result[u - 1]
-          }
-          result[u] = i
-        }
-      }
-    }
-    u = result.length
-    v = result[u - 1]
-    while (u-- > 0) {
-      result[u] = v
-      v = p[v]
-    }
-    return result
-  }
-
   // 卸载 children
   function unmountChildren(children, container) {
     for (let i = 0; i < children.length; i++) {
@@ -407,7 +408,23 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    mountComponent(n2, container, parentComponent, anchor)
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor)
+    } else {
+      updateComponent(n1, n2)
+    }
+  }
+
+  // diff 组件
+  function updateComponent(n1, n2) {
+    const instance = (n2.component = n1.component)
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2
+      instance.update()
+    } else {
+      n2.el = n1.el
+      instance.vnode = n2
+    }
   }
 
   // 挂载组件
@@ -418,7 +435,10 @@ export function createRenderer(options) {
     anchor
   ) {
     // 创建组件实例
-    const instance = createComponentInstance(initialVNode, parentComponent)
+    const instance = (initialVNode.component = createComponentInstance(
+      initialVNode,
+      parentComponent
+    ))
 
     // 组织组件数据 props emits slots proxy 等
     setupComponent(instance)
@@ -429,7 +449,7 @@ export function createRenderer(options) {
 
   // 组织 渲染dom and 副作用函数effect
   function setupRenderEffect(instance: any, initialVNode, container, anchor) {
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         console.log('init')
 
@@ -448,6 +468,12 @@ export function createRenderer(options) {
         instance.isMounted = true
       } else {
         console.log('update')
+        const { next, vnode } = instance
+        if (next) {
+          next.el = vnode.el
+          updateComponentPreRender(instance, next)
+        }
+
         const { proxy } = instance
         const subTree = instance.render.call(proxy)
         const prevSubTree = instance.subTree
@@ -456,6 +482,12 @@ export function createRenderer(options) {
         patch(prevSubTree, subTree, container, instance, anchor)
       }
     })
+  }
+
+  function updateComponentPreRender(instance, nextVNode) {
+    instance.vnode = nextVNode
+    instance.next = null
+    instance.props = nextVNode.props
   }
 
   return {

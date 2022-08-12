@@ -17,13 +17,15 @@ export function createComponentInstance(vnode, parent) {
     props: {},
     slots: {},
     proxy: {},
+    next: null,
     setupState: {},
     parent,
     provides: parent ? parent.provides : {},
     isMounted: false,
     subTree: {},
     emit: () => undefined,
-    render: () => undefined
+    render: () => undefined,
+    update: () => undefined
   }
 
   component.emit = emit.bind(null, component) as any
