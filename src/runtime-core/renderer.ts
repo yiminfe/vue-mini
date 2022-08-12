@@ -188,7 +188,56 @@ export function createRenderer(options) {
         i++
       }
     } else {
-      // 乱序diff
+      // 中间乱序 对比
+      const s1 = i
+      const s2 = i
+
+      // 新节点剩下的总数
+      const toBePatched = e2 - s2 + 1
+      // 记录比较次数
+      let patched = 0
+
+      // 根据属性 key 建立 Map映射表  记录key对应的新节点下标
+      const keyToNewIndexMap = new Map()
+      for (let i = s2; i <= e2; i++) {
+        const nextChild = c2[i]
+        keyToNewIndexMap.set(nextChild.key, i)
+      }
+
+      // 遍历 旧节点
+      for (let i = s1; i <= e1; i++) {
+        const prevChild = c1[i]
+
+        // 新节点已经比较完了，剩余的旧节点直接伤处
+        if (patched >= toBePatched) {
+          hostRemove(prevChild.el, container)
+          continue
+        }
+
+        // 记录 新节点key对应的下标
+        let newIndex
+        if (prevChild.key != null) {
+          // 时间复杂度O(n)
+          newIndex = keyToNewIndexMap.get(prevChild.key)
+        } else {
+          // 当旧节点的key不存在， 时间复杂度O(n²)
+          for (let j = s2; j < e2; j++) {
+            if (isSomeVNodeType(prevChild, c2[j])) {
+              newIndex = j
+              break
+            }
+          }
+        }
+
+        // 在新节点中没有找到，直接删除
+        if (newIndex === undefined) {
+          hostRemove(prevChild.el, container)
+        } else {
+          // 找到了，继续 diff
+          patch(prevChild, c2[newIndex], container, parentComponent, null)
+          patched++
+        }
+      }
     }
   }
 
