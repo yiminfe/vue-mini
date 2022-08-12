@@ -20,11 +20,13 @@ function parseChildren(context) {
   if (s.startsWith('{{')) {
     // 判断是否是插值标识开头
     node = parseInterpolation(context)
-  } else if (s[0] === '<') {
+  } else if (s[0] === '<' && /[a-z]/i.test(s[1])) {
     // 判断是否是element
-    if (/[a-z]/i.test(s[1])) {
-      node = parseElement(context)
-    }
+    node = parseElement(context)
+  }
+
+  if (!node) {
+    node = parseText(context)
   }
 
   nodes.push(node)
@@ -52,12 +54,12 @@ function parseInterpolation(context) {
   const rawContentLength = closeIndex - openDelimiter.length
 
   // 获取插值内容
-  const rawContent = context.source.slice(0, rawContentLength)
+  const rawContent = parseTextData(context, rawContentLength)
   // 去掉空格
   const content = rawContent.trim()
 
   // 往后推进词法
-  advanceBy(context, rawContentLength + closeDelimiter.length)
+  advanceBy(context, closeDelimiter.length)
 
   return {
     type: NodeTypes.INTERPOLATION,
@@ -92,6 +94,26 @@ function parseTag(context: any, type: TagType) {
     type: NodeTypes.ELEMENT,
     tag
   }
+}
+
+// 解析 文本
+function parseText(context: any) {
+  // 1. 获取content
+  const content = parseTextData(context, context.source.length)
+
+  return {
+    type: NodeTypes.TEXT,
+    content
+  }
+}
+
+// 解析 文本 数据 && 推进
+function parseTextData(context: any, length) {
+  const content = context.source.slice(0, length)
+
+  // 2. 推进
+  advanceBy(context, length)
+  return content
 }
 
 // 词法推进

@@ -3,7 +3,7 @@ import { baseParse } from '../src/parse'
 describe('Parse', () => {
   describe('interpolation', () => {
     test('simple interpolation', () => {
-      let ast = baseParse('{{ message }}')
+      const ast = baseParse('{{ message }}')
 
       expect(ast.children[0]).toStrictEqual({
         type: NodeTypes.INTERPOLATION,
@@ -12,23 +12,28 @@ describe('Parse', () => {
           content: 'message'
         }
       })
-
-      ast = baseParse('message }}')
-      expect(ast.children[0]).toBeUndefined()
     })
   })
 
   describe('element', () => {
     it('simple element div', () => {
-      let ast = baseParse('<div></div>')
+      const ast = baseParse('<div></div>')
 
       expect(ast.children[0]).toStrictEqual({
         type: NodeTypes.ELEMENT,
         tag: 'div'
       })
+    })
+  })
 
-      ast = baseParse('<1div></1div>')
-      expect(ast.children[0]).toBeUndefined()
+  describe('text', () => {
+    it('simple text', () => {
+      const ast = baseParse('some text')
+
+      expect(ast.children[0]).toStrictEqual({
+        type: NodeTypes.TEXT,
+        content: 'some text'
+      })
     })
   })
 })
