@@ -1,5 +1,10 @@
 import { NodeTypes } from './ast'
 
+const enum TagType {
+  Start,
+  End
+}
+
 // 基础词法解析
 export function baseParse(content: string) {
   const context = createParserContext(content)
@@ -11,9 +16,15 @@ function parseChildren(context) {
   const nodes: any = []
 
   let node
-  // 判断是否是插值标识开头
-  if (context.source.startsWith('{{')) {
+  const s = context.source
+  if (s.startsWith('{{')) {
+    // 判断是否是插值标识开头
     node = parseInterpolation(context)
+  } else if (s[0] === '<') {
+    // 判断是否是element
+    if (/[a-z]/i.test(s[1])) {
+      node = parseElement(context)
+    }
   }
 
   nodes.push(node)
@@ -54,6 +65,32 @@ function parseInterpolation(context) {
       type: NodeTypes.SIMPLE_EXPRESSION,
       content: content
     }
+  }
+}
+
+// 解析element
+function parseElement(context: any) {
+  const element = parseTag(context, TagType.Start)
+
+  parseTag(context, TagType.End)
+
+  return element
+}
+
+// 解析element tag节点
+function parseTag(context: any, type: TagType) {
+  // <div></div>
+  // TODO 正则校验网站：https://regexr.com/
+  const match: any = /^<\/?([a-z]*)/i.exec(context.source)
+  advanceBy(context, match[0].length + 1)
+  // advanceBy(context, 1)
+
+  if (type === TagType.End) return
+
+  const tag = match[1]
+  return {
+    type: NodeTypes.ELEMENT,
+    tag
   }
 }
 
