@@ -171,7 +171,8 @@ function advanceBy(context: any, length: number) {
 // 创建根节点
 function createRoot(children) {
   return {
-    children
+    children,
+    type: NodeTypes.ROOT
   }
 }
 
