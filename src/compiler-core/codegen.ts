@@ -1,4 +1,4 @@
-import { isString } from '../../shared'
+import { isString } from '../shared'
 import { NodeTypes } from './ast'
 import {
   CREATE_ELEMENT_VNODE,
@@ -75,9 +75,6 @@ function genNode(node: any, context) {
       break
     case NodeTypes.COMPOUND_EXPRESSION:
       genCompoundExpression(node, context)
-      break
-
-    default:
       break
   }
 }

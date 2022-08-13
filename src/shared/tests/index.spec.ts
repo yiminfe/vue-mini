@@ -1,4 +1,4 @@
-import { hasOwn, camelize, toHandlerKey } from '../index'
+import { hasOwn, camelize, toHandlerKey, toDisplayString } from '../index'
 
 describe('index test', () => {
   it('should call true when hasOwn', () => {
@@ -17,5 +17,9 @@ describe('index test', () => {
   it('should call onAddFoo when toHandlerKey', () => {
     expect(toHandlerKey('addFoo')).toBe('onAddFoo')
     expect(toHandlerKey('')).toBe('')
+  })
+
+  it('should call count when toDisplayString', () => {
+    expect(toDisplayString('count')).toBe('count')
   })
 })

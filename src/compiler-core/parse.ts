@@ -32,6 +32,7 @@ function parseChildren(context, ancestors) {
     }
 
     nodes.push(node)
+    node = null
   }
 
   return nodes
