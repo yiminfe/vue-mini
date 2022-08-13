@@ -1,5 +1,10 @@
+import { isString } from '../../shared'
 import { NodeTypes } from './ast'
-import { helperMapName, TO_DISPLAY_STRING } from './runtimeHelpers'
+import {
+  CREATE_ELEMENT_VNODE,
+  helperMapName,
+  TO_DISPLAY_STRING
+} from './runtimeHelpers'
 
 // 代码生成器
 export function generate(ast) {
@@ -65,10 +70,62 @@ function genNode(node: any, context) {
     case NodeTypes.SIMPLE_EXPRESSION:
       genExpression(node, context)
       break
+    case NodeTypes.ELEMENT:
+      genElement(node, context)
+      break
+    case NodeTypes.COMPOUND_EXPRESSION:
+      genCompoundExpression(node, context)
+      break
 
     default:
       break
   }
+}
+
+// 生成组合节点的代码
+function genCompoundExpression(node: any, context: any) {
+  const { push } = context
+  const children = node.children
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]
+    if (isString(child)) {
+      push(child)
+    } else {
+      genNode(child, context)
+    }
+  }
+}
+
+// 生成element节点的代码
+function genElement(node: any, context: any) {
+  const { push, helper } = context
+  const { tag, children, props } = node
+  push(`${helper(CREATE_ELEMENT_VNODE)}(`)
+  genNodeList(genNullable([tag, props, children]), context)
+  push(')')
+}
+
+// 生成 node list 的代码
+function genNodeList(nodes, context) {
+  const { push } = context
+
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i]
+    if (isString(node)) {
+      push(node)
+    } else {
+      genNode(node, context)
+    }
+
+    if (i < nodes.length - 1) {
+      push(', ')
+    }
+  }
+}
+
+// 生成undefined->null 代码
+function genNullable(args: any) {
+  return args.map((arg) => arg || 'null')
 }
 
 // 生成表达式的代码

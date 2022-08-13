@@ -13,7 +13,12 @@ export function transform(root, options = {}) {
 
 // 创建 root 代码生成器
 function createRootCodegen(root: any) {
-  root.codegenNode = root.children[0]
+  const child = root.children[0]
+  if (child.type === NodeTypes.ELEMENT) {
+    root.codegenNode = child.codegenNode
+  } else {
+    root.codegenNode = root.children[0]
+  }
 }
 
 // 创建上下文
@@ -32,10 +37,13 @@ function createTransformContext(root: any, options: any): any {
 
 // 深度优先遍历
 function traverseNode(node: any, context) {
+  // 调用插件
   const nodeTransforms = context.nodeTransforms
+  const exitFns: any = []
   for (let i = 0; i < nodeTransforms.length; i++) {
     const transform = nodeTransforms[i]
-    transform(node)
+    const onExit = transform(node, context)
+    onExit && exitFns.push(onExit)
   }
 
   switch (node.type) {
@@ -49,6 +57,12 @@ function traverseNode(node: any, context) {
 
     default:
       break
+  }
+
+  // 退出时执行
+  let i = exitFns.length
+  while (i--) {
+    exitFns[i]()
   }
 }
 

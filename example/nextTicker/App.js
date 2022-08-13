@@ -17,7 +17,6 @@ export default {
         count.value = i
       }
 
-      debugger
       console.log(instance)
       nextTick(() => {
         console.log(instance)
