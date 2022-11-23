@@ -158,12 +158,14 @@ export function createRenderer(options) {
         hostSetElementText(container, c2)
       }
     } else {
-      // newNode->Array oldNode->Text
+      // newNode->Array
+
+      // oldNode->Text
       if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
         hostSetElementText(container, '')
         mountChildren(c2, container, parentComponent, anchor)
       } else {
-        // array diff array
+        // oldNode->Array diff
         patchKeyedChildren(c1, c2, container, parentComponent, anchor)
       }
     }
@@ -187,6 +189,7 @@ export function createRenderer(options) {
     }
 
     // 左侧有序 diff
+    // TODO 从左侧开始查找所有相同的节点，并且 patch 相同的节点，不同就停止查找
     while (i <= e1 && i <= e2) {
       const n1 = c1[i]
       const n2 = c2[i]
@@ -201,6 +204,7 @@ export function createRenderer(options) {
     }
 
     // 右侧有序 diff
+    // TODO 从右侧开始查找所有相同的节点，并且 patch 相同的节点，不同就停止查找
     while (i <= e1 && i <= e2) {
       const n1 = c1[e1]
       const n2 = c2[e2]
@@ -215,7 +219,11 @@ export function createRenderer(options) {
       e2--
     }
 
-    // 有序场景1：新节点比旧节点多
+    // TODO 剩下的结构
+    // c1: 123xxx789，剩下的节点：i~e1
+    // c2: 123xxxxx789，剩下的节点：i~e2
+
+    // TODO 有序场景1：新节点比旧节点多,挂载剩下的新节点
     if (i > e1) {
       if (i <= e2) {
         // 锚点索引
@@ -227,13 +235,13 @@ export function createRenderer(options) {
         }
       }
     } else if (i > e2) {
-      // 有序场景2：新节点比旧节点少
+      // TODO 有序场景2：新节点比旧节点少，卸载剩下的旧节点
       while (i <= e1) {
         hostRemove(c1[i].el, container)
         i++
       }
     } else {
-      // 中间乱序 对比
+      // TODO 中间乱序 diff
       const s1 = i
       const s2 = i
 
@@ -243,9 +251,10 @@ export function createRenderer(options) {
       let patched = 0
 
       // 根据属性 key 建立 Map映射表  记录key在新节点对应的下标
+      // key=newNode.key,value=newNode.index
       const keyToNewIndexMap = new Map()
 
-      // 根据新节点剩下的总数，创建新节点映射旧节点的下标容器（newVnode.index->oldVnode.index），value=旧节点的下标
+      // 根据新节点剩下的总数，创建新节点映射旧节点的下标,index=newVnode.index, value=oldVnode.index
       const newIndexToOldIndexMap = new Array(toBePatched)
       // 是否需要移动元素
       let moved = false
@@ -260,24 +269,24 @@ export function createRenderer(options) {
         keyToNewIndexMap.set(nextChild.key, i)
       }
 
-      // 遍历 旧节点
+      // TODO 遍历 旧节点
+      // TODO 核心功能：删除多余的旧节点，映射newIndex->oldIndex,判断是否需要移动moved，patch节点
       for (let i = s1; i <= e1; i++) {
         const prevChild = c1[i]
 
-        // 新节点已经比较完了，剩余的旧节点直接删除
+        // TODO 新节点已经比较完了，剩余的旧节点直接删除
         if (patched >= toBePatched) {
           hostRemove(prevChild.el, container)
           continue
         }
 
-        // 记录 新节点key对应的下标
+        // TODO 记录 新节点key对应的下标
         let newIndex
         if (prevChild.key != null) {
           // 时间复杂度O(n) 在新节点key->index映射表中查找新节点的index
           newIndex = keyToNewIndexMap.get(prevChild.key)
         } else {
           // 当旧节点的key不存在， 时间复杂度O(n²)，比较vnode.type
-          // TODO 遇到的问题 j <= e2 索引值应该相等
           for (let j = s2; j <= e2; j++) {
             if (isSomeVNodeType(prevChild, c2[j])) {
               newIndex = j
@@ -286,29 +295,30 @@ export function createRenderer(options) {
           }
         }
 
-        // 在新节点中没有找到，直接删除
+        // TODO 在新节点中没有找到，直接删除
         if (newIndex === undefined) {
           hostRemove(prevChild.el, container)
         } else {
-          // 找到了
+          // TODO 找到了，继续diff
           if (newIndex >= maxNewIndexSoFar) {
-            // newIndex 是持续的，不需要移动元素
+            // TODO newIndex 是持续的，不需要移动元素
             maxNewIndexSoFar = newIndex
           } else {
-            // newIndex 不是持续的，需要移动元素
+            // TODO newIndex 不是持续的，需要移动元素
             moved = true
           }
 
           // 给newVnode.index->oldVnode.index映射容器赋值，i+1 避免0代表在旧节点中不存在的场景
           newIndexToOldIndexMap[newIndex - s2] = i + 1
 
-          // 继续 diff
+          // TODO 继续 diff
           patch(prevChild, c2[newIndex], container, parentComponent, null)
           patched++
         }
       }
 
-      // 根据最长递增子序列处理移动
+      // TODO 根据最长递增子序列处理移动
+      // TODO 核心功能：新增新节点，移动旧节点
       // 性能优化，需要移动，才获取最长递增子序列
       const increasingNewIndexSequence = moved
         ? getSequence(newIndexToOldIndexMap)
@@ -322,7 +332,7 @@ export function createRenderer(options) {
         const nextIndex = i + s2
         // 获取需要移动的元素
         const nextChild = c2[nextIndex]
-        // 获取锚点元素
+        // TODO 获取锚点元素
         const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null
 
         // newVnode.index->oldVnode.index映射表的值=0 说明新节点在旧节点中不存，需要新增元素
@@ -360,6 +370,7 @@ export function createRenderer(options) {
         }
       }
 
+      // 删除掉不存在的属性
       if (oldProps !== EMPTY_OBJ) {
         for (const key in oldProps) {
           if (!(key in newProps)) {
@@ -458,7 +469,7 @@ export function createRenderer(options) {
           // 获取组件实例的代理对象
           const { proxy } = instance
 
-          // 调用渲染函数
+          // 调用渲染函数，生成 vnode
           const subTree = (instance.subTree = instance.render.call(
             proxy,
             proxy

@@ -10,7 +10,6 @@ describe('Test Reactivity Reactive', () => {
     expect(isReactive(original)).toBe(false)
     expect(isReadonly(observed)).toBe(false)
     expect(isReadonly(original)).toBe(false)
-
     expect(isProxy(observed)).toBe(true)
   })
 

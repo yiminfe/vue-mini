@@ -73,20 +73,20 @@ function cleanupEffect(effect: EffectType) {
   effect.deps.length = 0
 }
 
-const targetMap: WeakMapTarget = new WeakMap()
+const targetMap: WeakMapTarget = new WeakMap<object, MapSetEffect>()
 
 // 追踪 effect
 export function track<T extends object>(target: T, key: PropertyKey) {
   if (!isTracking()) return
 
   // target -> key -> dep
-  let depsMap: MapSetEffect = targetMap.get(target) as MapSetEffect
+  let depsMap = targetMap.get(target)
   if (!depsMap) {
     targetMap.set(target, (depsMap = new Map()))
   }
 
   // 获取 set<fn>
-  let dep: SetEffect = depsMap.get(key) as SetEffect
+  let dep = depsMap.get(key)
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
@@ -113,9 +113,9 @@ export function isTracking(): boolean {
 
 // 触发 effect
 export function trigger<T extends object>(target: T, key: PropertyKey) {
-  const depsMap: MapSetEffect = targetMap.get(target) as MapSetEffect
-  const dep: SetEffect = depsMap.get(key) as SetEffect
-  triggerEffects(dep)
+  const depsMap = targetMap.get(target)
+  const dep = depsMap?.get(key)
+  dep && triggerEffects(dep)
 }
 
 // 触发 effect set容器 公共逻辑
@@ -131,7 +131,7 @@ export function effect<T = any>(
   options: EffectOptions = {}
 ): EffectRunner<T> {
   const _effect: EffectType = new ReactiveEffect<T>(fn, options.scheduler)
-  // 跪在options上的属性给effect
+  // 拷贝options上的属性给effect
   extend(_effect, options)
 
   _effect.run()

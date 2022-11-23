@@ -1,4 +1,4 @@
-import { isObject } from './../shared/index'
+import { hasChanged, isObject } from './../shared/index'
 import { track, trigger } from './effect'
 import { reactive, ReactiveFlags, readonly } from './reactive'
 
@@ -23,7 +23,7 @@ function createGetter<T extends object>(isReadonly: boolean, shallow: boolean) {
       return isReadonly ? readonly(res) : reactive(res)
     }
 
-    // 只读 reactive
+    // reactive
     if (!isReadonly) {
       track<T>(target, key)
     }
@@ -42,6 +42,10 @@ function createSetter<T extends object>(isReadonly: boolean) {
       return true
     }
 
+    const oldValue = Reflect.get(target, key)
+    if (!hasChanged(oldValue, value)) {
+      return true
+    }
     const res = Reflect.set(target, key, value)
 
     trigger<T>(target, key)

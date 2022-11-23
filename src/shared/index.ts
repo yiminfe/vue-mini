@@ -2,11 +2,19 @@ export * from './toDisplayString'
 
 export const extend = Object.assign
 
-export const isObject = (value) => {
+// export const isObject = (value) => {
+//   return value !== null && typeof value === 'object'
+// }
+
+export const isObject = (value: unknown): value is object => {
   return value !== null && typeof value === 'object'
 }
 
-export const isString = (value) => typeof value === 'string'
+// export const isString = value => typeof value === 'string'
+
+export const isString = (value: unknown): value is string => {
+  return typeof value === 'string'
+}
 
 export const EMPTY_OBJ = {}
 
