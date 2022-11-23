@@ -7,7 +7,7 @@
   "author": "zhaoyimin <18510512011@163.com>",
   "license": "MIT",
   "scripts": {
-    "test": "jest --collect-coverage",
+    "test:jest": "jest --collect-coverage --config ./jest.config.ts",
     "lint": "eslint . --fix",
     "build": "rollup -c rollup.config.js"
   },
