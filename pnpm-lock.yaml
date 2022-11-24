@@ -64,6 +64,9 @@ importers:
     dependencies:
       '@vue-mini/runtime-core': link:../runtime-core
 
+  packages/shared:
+    specifiers: {}
+
   packages/vue:
     specifiers:
       '@vue-mini/compiler-core': workspace:^1.0.0
